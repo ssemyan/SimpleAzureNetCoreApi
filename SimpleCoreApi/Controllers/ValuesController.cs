@@ -11,10 +11,13 @@ namespace SimpleCoreApi.Controllers
     {
         // GET api/values
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IEnumerable<ItemInfo> Get()
         {
-            return new string[] { "value1", "value2" };
-        }
+			List<ItemInfo> stores = new List<ItemInfo>();
+			stores.Add(new ItemInfo { itemId = 1, itemName = "My Item" });
+			stores.Add(new ItemInfo { itemId = 2, itemName = "My Other Item" });
+			return stores;
+		}
 
         // GET api/values/5
         [HttpGet("{id}")]
