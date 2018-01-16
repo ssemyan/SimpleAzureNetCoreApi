@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace SimpleCoreApi
 {
@@ -28,18 +22,19 @@ namespace SimpleCoreApi
 					builder =>
 					{
 						builder
-							//.WithOrigins("http://localhost:4456") //AllowSpecificOrigins;  
-							//.WithOrigins("http://localhost:4456", "http://localhost:4457") //AllowMultipleOrigins;  
+								//.WithOrigins("http://localhost:4456") //AllowSpecificOrigins;  
+								//.WithOrigins("http://localhost:4456", "http://localhost:4457") //AllowMultipleOrigins;  
 							.AllowAnyOrigin() //AllowAllOrigins;  
-											  //.WithMethods("GET") //AllowSpecificMethods;  
-											  //.WithMethods("GET", "PUT") //AllowSpecificMethods;  
-											  //.WithMethods("GET", "PUT", "POST") //AllowSpecificMethods;  
-							.WithMethods("GET", "PUT", "POST", "DELETE") //AllowSpecificMethods;  
-																		 //.AllowAnyMethod() //AllowAllMethods;  
-																		 //.WithHeaders("Accept", "Content-type", "Origin", "X-Custom-Header"); //AllowSpecificHeaders;  
+								//.WithMethods("GET") //AllowSpecificMethods;  
+								//.WithMethods("GET", "PUT") //AllowSpecificMethods;  
+								//.WithMethods("GET", "PUT", "POST") //AllowSpecificMethods;  
+								//.WithMethods("GET", "PUT", "POST", "DELETE") //AllowSpecificMethods;  
+							.AllowAnyMethod() //AllowAllMethods;  
+								//.WithHeaders("Accept", "Content-type", "Origin", "X-Custom-Header"); //AllowSpecificHeaders;  
 							.AllowAnyHeader(); //AllowAllHeaders;  
 					})
 			);
+
 			services.AddMvc();
 		}
 

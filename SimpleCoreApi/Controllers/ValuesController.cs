@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.ServiceBus;
@@ -23,15 +21,19 @@ namespace SimpleCoreApi.Controllers
 			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 			{
 				// Running local
-				connStr = "Server=localhost;Initial Catalog=scottsedisdb;Integrated Security=SSPI;Persist Security Info=True;";
+				connStr = Environment.GetEnvironmentVariable("LOCAL_DB_CONN_STR");
 			}
 			else
 			{
 				// Running in Azure
 				var azureServiceTokenProvider = new AzureServiceTokenProvider();
 				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+
+				// Get the secret name from the env variable
+				var dbKeyvaultId = Environment.GetEnvironmentVariable("DB_KEYVAULT_ID");
+
 				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
-				var secret = keyVaultClient.GetSecretAsync("https://scottsedisvault.vault.azure.net/secrets/ApiUserConnectionString-c19aed5e-4a64-41ce-9f0d-0b44300b223a/ba31031dc3094de0b6fa0907bd5a74c1").Result;
+				var secret = keyVaultClient.GetSecretAsync(dbKeyvaultId).Result;
 				connStr = secret.Value;
 			}
 
@@ -62,21 +64,27 @@ namespace SimpleCoreApi.Controllers
 			string connStr;
 			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 			{
-				// Running local (TODO: install a local bus and put the conn string below
-				connStr = "localbus";
+				// Running local
+				connStr = Environment.GetEnvironmentVariable("LOCAL_SB_CONN_STR");
 			}
 			else
 			{
 				// Running in Azure
 				var azureServiceTokenProvider = new AzureServiceTokenProvider();
 				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+
+				// Get the secret name from the env variable
+				var sbKeyvaultId = Environment.GetEnvironmentVariable("SB_KEYVAULT_ID");
+
 				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
-				var secret = keyVaultClient.GetSecretAsync("https://scottsedisvault.vault.azure.net/secrets/ScottseDisApiServiceBusConnectionString-61741ae8-f832-4c13-8bd4-e285a78904cf/9beb9ee7e59f4b96bbed62303e48b547").Result;
+				var secret = keyVaultClient.GetSecretAsync(sbKeyvaultId).Result;
 				connStr = secret.Value;
 			}
 
+			string queueName = Environment.GetEnvironmentVariable("QUEUE_NAME");
+
 			// Add a message to the queue to state what changed
-			var topicClient = new QueueClient(connStr, "disnotify");
+			var topicClient = new QueueClient(connStr, queueName);
 
 			// Create a new message to send to the topic.
 			var message = new Message();
