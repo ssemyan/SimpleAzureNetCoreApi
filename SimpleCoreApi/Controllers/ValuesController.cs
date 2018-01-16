@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
@@ -56,7 +57,7 @@ namespace SimpleCoreApi.Controllers
 
         // GET api/values/5
         [HttpGet("{id}")]
-        public string Get(string id)
+        public string Get(string emailAddress)
         {
 			string connStr;
 			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
@@ -79,8 +80,9 @@ namespace SimpleCoreApi.Controllers
 
 			// Create a new message to send to the topic.
 			var message = new Message();
-			message.UserProperties.Add("ToEmail", "emailAddress");
+			message.UserProperties.Add("ToEmail", emailAddress);
 			message.UserProperties.Add("Message", "Here is a queued message sent: " + DateTime.Now);
+			message.Body = Encoding.ASCII.GetBytes(emailAddress);
 
 			// Send the message to the topic.
 			topicClient.SendAsync(message);
