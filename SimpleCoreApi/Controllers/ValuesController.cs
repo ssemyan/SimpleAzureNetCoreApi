@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
+using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.Services.AppAuthentication;
 
 namespace SimpleCoreApi.Controllers
@@ -55,16 +56,37 @@ namespace SimpleCoreApi.Controllers
 
         // GET api/values/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public string Get(string id)
         {
-            return "value";
-        }
+			string connStr;
+			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
+			{
+				// Running local (TODO: install a local bus and put the conn string below
+				connStr = "localbus";
+			}
+			else
+			{
+				// Running in Azure
+				var azureServiceTokenProvider = new AzureServiceTokenProvider();
+				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
+				var secret = keyVaultClient.GetSecretAsync("https://scottsedisvault.vault.azure.net/secrets/ScottseDisApiServiceBusConnectionString-61741ae8-f832-4c13-8bd4-e285a78904cf/9beb9ee7e59f4b96bbed62303e48b547").Result;
+				connStr = secret.Value;
+			}
 
-        // POST api/values
-        [HttpPost]
-        public void Post([FromBody]string value)
-        {
-        }
+			// Add a message to the queue to state what changed
+			var topicClient = new QueueClient(connStr, "disnotify");
+
+			// Create a new message to send to the topic.
+			var message = new Message();
+			message.UserProperties.Add("ToEmail", "emailAddress");
+			message.UserProperties.Add("Message", "Here is a queued message sent: " + DateTime.Now);
+
+			// Send the message to the topic.
+			topicClient.SendAsync(message);
+
+			return "Message Sent";
+		}
 
         // PUT api/values/5
         [HttpPut("{id}")]
