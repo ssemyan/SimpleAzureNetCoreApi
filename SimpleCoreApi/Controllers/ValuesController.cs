@@ -56,7 +56,7 @@ namespace SimpleCoreApi.Controllers
 		}
 
         // GET api/values/5
-        [HttpGet("{id}")]
+        [HttpGet("{emailAddress}")]
         public string Get(string emailAddress)
         {
 			string connStr;
