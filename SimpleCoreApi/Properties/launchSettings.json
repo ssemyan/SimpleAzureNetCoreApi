@@ -13,12 +13,6 @@
       "launchBrowser": true,
       "launchUrl": "api/values",
       "environmentVariables": {
-        "SB_KEYVAULT_ID": "{service bus keyvault id}",
-        "DB_KEYVAULT_ID": "{db keyvault id}",
-        "QUEUE_NAME": "{queuename}",
-        "LOCAL_DB_CONN_STR": "{local db conn str}",
-        "LOCAL_SB_CONN_STR": "{local service bus conn str}",
-        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "SimpleCoreApi": {

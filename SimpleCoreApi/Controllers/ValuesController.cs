@@ -6,22 +6,33 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Extensions.Options;
 
 namespace SimpleCoreApi.Controllers
 {
     [Route("api/[controller]")]
     public class ValuesController : Controller
     {
-        // GET api/values
-        [HttpGet]
+		private readonly AppSettings _appSettings;
+
+		public ValuesController(IOptions<AppSettings> appSettings)
+		{
+			// Get the app settings to use locally
+			_appSettings = appSettings.Value;
+		}
+
+		// GET api/values
+		[HttpGet]
         public IEnumerable<ItemInfo> Get()
         {
 			List<ItemInfo> stores = new List<ItemInfo>();
 			string connStr;
+
+			// The env variable WEBSITE_SITE_NAME is set in Azure only
 			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 			{
 				// Running local
-				connStr = Environment.GetEnvironmentVariable("LOCAL_DB_CONN_STR");
+				connStr = _appSettings.LocalDbConnectionString;
 			}
 			else
 			{
@@ -30,7 +41,7 @@ namespace SimpleCoreApi.Controllers
 				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
 
 				// Get the secret name from the env variable
-				var dbKeyvaultId = Environment.GetEnvironmentVariable("DB_KEYVAULT_ID");
+				var dbKeyvaultId = _appSettings.DatabaseKeyVaultId;
 
 				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
 				var secret = keyVaultClient.GetSecretAsync(dbKeyvaultId).Result;
@@ -65,7 +76,7 @@ namespace SimpleCoreApi.Controllers
 			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
 			{
 				// Running local
-				connStr = Environment.GetEnvironmentVariable("LOCAL_SB_CONN_STR");
+				connStr = _appSettings.LocalServiceBusConnectionString;
 			}
 			else
 			{
@@ -74,14 +85,14 @@ namespace SimpleCoreApi.Controllers
 				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
 
 				// Get the secret name from the env variable
-				var sbKeyvaultId = Environment.GetEnvironmentVariable("SB_KEYVAULT_ID");
+				var sbKeyvaultId = _appSettings.ServiceBusKeyVaultId;
 
 				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
 				var secret = keyVaultClient.GetSecretAsync(sbKeyvaultId).Result;
 				connStr = secret.Value;
 			}
 
-			string queueName = Environment.GetEnvironmentVariable("QUEUE_NAME");
+			string queueName = _appSettings.QueueName;
 
 			// Add a message to the queue to state what changed
 			var topicClient = new QueueClient(connStr, queueName);

@@ -36,6 +36,9 @@ namespace SimpleCoreApi
 			);
 
 			services.AddMvc();
+
+			// Load the app settings
+			services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
 		}
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -52,4 +55,14 @@ namespace SimpleCoreApi
 			app.UseMvc();
         }
     }
+
+	// Class used to hold the app settings
+	public class AppSettings
+	{
+		public string ServiceBusKeyVaultId { get; set; }
+		public string DatabaseKeyVaultId { get; set; }
+		public string QueueName { get; set; }
+		public string LocalDbConnectionString { get; set; }
+		public string LocalServiceBusConnectionString { get; set; }
+	}
 }
