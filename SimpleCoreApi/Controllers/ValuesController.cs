@@ -16,7 +16,7 @@ namespace SimpleCoreApi.Controllers
 			_appSettings = appSettings.Value;
 		}
 
-		// GET api/values - returns all values
+		// GET api/values - returns all items
 		[HttpGet]
         public IEnumerable<ItemInfo> Get()
         {
@@ -42,7 +42,7 @@ namespace SimpleCoreApi.Controllers
 			return items;
 		}
 
-        // PUT api/values
+        // PUT api/values - creates a new item
         [HttpPut]
         public void Put([FromBody] ItemInfo newItem)
         {
@@ -55,7 +55,21 @@ namespace SimpleCoreApi.Controllers
 			}
 		}
 
-		// DELETE api/values/5 - deletes specified value
+		// PATCH api/values - updates an existing item
+		[HttpPatch]
+		public void Patch([FromBody] ItemInfo newItem)
+		{
+			using (var connection = new SqlConnection(_appSettings.DbConnectionString))
+			{
+				var command = new SqlCommand("update Items set itemName = @itemName where itemId = @itemId", connection);
+				command.Parameters.AddWithValue("@itemName", newItem.ItemName);
+				command.Parameters.AddWithValue("@itemId", newItem.ItemId);
+				connection.Open();
+				command.ExecuteNonQuery();
+			}
+		}
+
+		// DELETE api/values/5 - deletes specified item
 		[HttpDelete("{id}")]
         public void Delete(int id)
         {
