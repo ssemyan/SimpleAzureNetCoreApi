@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Options;
 
 namespace SimpleCoreApi.Controllers
 {
-    [Route("api/[controller]")]
+	[Route("api/[controller]")]
     public class ValuesController : Controller
     {
 		private readonly AppSettings _appSettings;
@@ -21,34 +16,13 @@ namespace SimpleCoreApi.Controllers
 			_appSettings = appSettings.Value;
 		}
 
-		// GET api/values
+		// GET api/values - returns all values
 		[HttpGet]
         public IEnumerable<ItemInfo> Get()
         {
-			List<ItemInfo> stores = new List<ItemInfo>();
-			string connStr;
+			List<ItemInfo> items = new List<ItemInfo>();
 
-			// The env variable WEBSITE_SITE_NAME is set in Azure only
-			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
-			{
-				// Running local
-				connStr = _appSettings.LocalDbConnectionString;
-			}
-			else
-			{
-				// Running in Azure
-				var azureServiceTokenProvider = new AzureServiceTokenProvider();
-				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-
-				// Get the secret name from the env variable
-				var dbKeyvaultId = _appSettings.DatabaseKeyVaultId;
-
-				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
-				var secret = keyVaultClient.GetSecretAsync(dbKeyvaultId).Result;
-				connStr = secret.Value;
-			}
-
-			using (var connection = new SqlConnection(connStr))
+			using (var connection = new SqlConnection(_appSettings.DbConnectionString))
 			{
 				var command = new SqlCommand("select itemId, itemName from Items", connection);
 				connection.Open();
@@ -58,67 +32,39 @@ namespace SimpleCoreApi.Controllers
 					{
 						ItemInfo test = new ItemInfo
 						{
-							itemId = (int)reader["itemId"],
-							itemName = (string)reader["itemName"]
+							ItemId = (int)reader["itemId"],
+							ItemName = (string)reader["itemName"]
 						};
-						stores.Add(test);
+						items.Add(test);
 					}
 				}
 			}
-			return stores;
+			return items;
 		}
 
-        // GET api/values/5
-        [HttpGet("{emailAddress}")]
-        public string Get(string emailAddress)
+        // PUT api/values
+        [HttpPut]
+        public void Put([FromBody] ItemInfo newItem)
         {
-			string connStr;
-			if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME")))
+			using (var connection = new SqlConnection(_appSettings.DbConnectionString))
 			{
-				// Running local
-				connStr = _appSettings.LocalServiceBusConnectionString;
+				var command = new SqlCommand("insert Items (itemName) select @itemName", connection);
+				command.Parameters.AddWithValue("@itemName", newItem.ItemName);
+				connection.Open();
+				command.ExecuteNonQuery();
 			}
-			else
-			{
-				// Running in Azure
-				var azureServiceTokenProvider = new AzureServiceTokenProvider();
-				var keyVaultClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
-
-				// Get the secret name from the env variable
-				var sbKeyvaultId = _appSettings.ServiceBusKeyVaultId;
-
-				// TODO: handle errors if the web app cannot connect to the keyvault or get the secret. 
-				var secret = keyVaultClient.GetSecretAsync(sbKeyvaultId).Result;
-				connStr = secret.Value;
-			}
-
-			string queueName = _appSettings.QueueName;
-
-			// Add a message to the queue to state what changed
-			var topicClient = new QueueClient(connStr, queueName);
-
-			// Create a new message to send to the topic.
-			var message = new Message();
-			message.UserProperties.Add("ToEmail", emailAddress);
-			message.UserProperties.Add("Message", "Here is a queued message sent: " + DateTime.Now);
-			message.Body = Encoding.ASCII.GetBytes(emailAddress);
-
-			// Send the message to the topic.
-			topicClient.SendAsync(message);
-
-			return "Message Sent";
 		}
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
-        {
-        }
-
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
+		// DELETE api/values/5 - deletes specified value
+		[HttpDelete("{id}")]
         public void Delete(int id)
         {
-        }
-    }
+			using (var connection = new SqlConnection(_appSettings.DbConnectionString))
+			{
+				var command = new SqlCommand("delete Items where itemId = " + id, connection);
+				connection.Open();
+				command.ExecuteNonQuery();
+			}
+		}
+	}
 }

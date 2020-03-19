@@ -59,10 +59,6 @@ namespace SimpleCoreApi
 	// Class used to hold the app settings
 	public class AppSettings
 	{
-		public string ServiceBusKeyVaultId { get; set; }
-		public string DatabaseKeyVaultId { get; set; }
-		public string QueueName { get; set; }
-		public string LocalDbConnectionString { get; set; }
-		public string LocalServiceBusConnectionString { get; set; }
+		public string DbConnectionString { get; set; }
 	}
 }
